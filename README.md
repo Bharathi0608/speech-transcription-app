@@ -1,160 +1,227 @@
+
 # VocalFlow — Real-Time Multilingual Speech-to-Text & Dashboard
 
-A production-grade, real-time Speech-to-Text web application specializing in **multilingual code-switching (Hinglish: Hindi + English)** with **PostgreSQL relational database** storage and an interactive **CRUD operations dashboard**.
-
----
+A real-time Speech-to-Text web application specializing in multilingual code-switching (Hinglish: Hindi + English), with PostgreSQL database storage and an interactive CRUD dashboard.
 
 ## 🌟 Key Features
 
-1. **Real-Time Multilingual Speech-to-Text (Hinglish)**
-   - Transcribes mixed Hindi & English sentences (e.g. *"Main kal market ja raha hoon to buy some fresh fruits and vegetables"*).
-   - Zero-latency client streaming with continuous interim transcripts and confidence tracking.
-   - Real-time 60fps dynamic audio visualizer powered by Web Audio API `AnalyserNode`.
+### 1. Real-Time Multilingual Speech-to-Text
+- Transcribes mixed Hindi and English sentences, such as *"Main kal market ja raha hoon to buy some fresh fruits and vegetables."*
+- Supports continuous interim transcripts and confidence tracking.
+- Provides a dynamic audio visualizer using the Web Audio API `AnalyserNode`.
 
-2. **Multilingual Code-Switching Analyzer**
-   - Automatically detects Hindi words (Devanagari Unicode & Romanized Hinglish vocabulary), English vocabulary, and code-switching transition points.
-   - Computes real-time language ratio breakdown (e.g., `55% Hindi, 45% English (Hinglish)`).
+### 2. Multilingual Code-Switching Analyzer
+- Detects Hindi words using Devanagari Unicode and Romanized Hinglish vocabulary.
+- Identifies English vocabulary and language-switching points.
+- Computes language-ratio breakdowns, such as 55% Hindi and 45% English.
 
-3. **Multi-Engine Speech Support**
-   - **Native Multilingual Real-time Engine**: Zero-latency, browser-native streaming STT.
-   - **Google Gemini Live 3.1 / Flash STT API**: Code-switching audio transcription with verbatim accuracy.
-   - **Open-Source Whisper Large v3 (Groq)**: Top-tier multilingual model running with sub-second turnaround.
-   - **Open-Source Local Receiver**: Processes raw audio recordings without external dependencies.
+### 3. Multi-Engine Speech Support
+- **Browser-native speech recognition:** Real-time speech recognition using the browser's supported speech engine.
+- **Google Gemini API:** Speech transcription using a configured Gemini model.
+- **Groq Whisper:** Multilingual transcription using a supported Whisper model.
+- **Local audio processing:** Processes uploaded audio using the application's configured transcription implementation.
 
-4. **Relational Database Storage & CRUD Dashboard**
-   - **PostgreSQL 17** integration via SQLAlchemy ORM with connection pooling.
-   - **Automatic SQLite fallback**: Resilient failover ensures the system runs anywhere even without Docker.
-   - **Create**: Live microphone stream recording, manual notes, audio file uploads (WAV, MP3, WebM, M4A, OGG).
-   - **Read**: Search by keywords/tags, filter by language (`Hinglish`, `Hindi`, `English`), sort by date or duration.
-   - **Update**: In-place edit modal for title, transcription text, tags, annotations, and favorite status.
-   - **Delete**: Single item deletion and batch bulk-delete with automatic audio cleanup.
-   - **Export**: Export history as JSON, CSV, Plain Text, or Subtitle (SRT) format.
+### 4. Database Storage & CRUD Dashboard
+- PostgreSQL integration using SQLAlchemy ORM and connection pooling.
+- SQLite fallback, if supported by the application's database initialization logic.
+- **Create:** Save microphone recordings, manual notes, and supported audio uploads.
+- **Read:** Search transcriptions by keywords and tags, filter by language, and sort records.
+- **Update:** Edit transcription titles, text, tags, notes, and favorite status.
+- **Delete:** Delete individual records or multiple records.
+- **Export:** Export transcription history in JSON, CSV, TXT, or SRT format, if implemented.
 
-5. **Open-Source Text-to-Speech (TTS)**
-   - Synthesizes speech using open-source `gTTS` with MD5 cache for zero-latency replay.
-   - Automatic accent detection (Hindi voice for Hinglish/Devanagari, English voice for English).
-   - In-dashboard 1-click audio playback on every saved transcription.
-
----
+### 5. Text-to-Speech
+- Generate speech using Google Text-to-Speech (`gTTS`).
+- Cache generated audio when supported by the implementation.
+- Select an appropriate language voice based on the detected language.
+- Play generated speech from saved transcription records.
 
 ## 🏗️ Architecture Overview
 
 ```mermaid
 graph TD
-    Client["Browser Frontend (Studio + Dashboard)"]
-    AudioAPI["Web Audio API & AnalyserNode"]
-    SpeechRec["SpeechRecognition (Multilingual hi-IN / en-IN)"]
-    WSClient["WebSocket Client (/ws/transcribe)"]
-    
-    FastAPI["FastAPI Backend (Port 8000)"]
+    Client["Browser Frontend: Studio and Dashboard"]
+    AudioAPI["Web Audio API and AnalyserNode"]
+    SpeechRec["Browser Speech Recognition"]
+    WSClient["WebSocket Client"]
+
+    FastAPI["FastAPI Backend"]
     WSRoute["WebSocket Router"]
-    APIRoute["REST CRUD Router (/api)"]
-    LangDetect["Hinglish Code-Switch Detector"]
-    TTSEngine["Open-Source gTTS Engine"]
-    STTEngines["Gemini Live / Groq Whisper Engine"]
-    
-    Postgres[("PostgreSQL 17 Container (Port 5433)")]
-    SQLite[("SQLite Fallback (transcriptions.db)")]
+    APIRoute["REST API Router"]
+    LangDetect["Hinglish Language Detector"]
+    TTSEngine["Text-to-Speech Engine"]
+    STTEngines["Configured Speech-to-Text Engines"]
+
+    Postgres[("PostgreSQL")]
+    SQLite[("SQLite Fallback")]
 
     Client --> AudioAPI
     Client --> SpeechRec
     Client --> WSClient
-    
-    WSClient <-->|Interim Transcripts & Stats| WSRoute
-    Client <-->|REST API & Audio Upload| APIRoute
-    
+
+    WSClient <-->|Transcripts and Statistics| WSRoute
+    Client <-->|REST API and Audio Upload| APIRoute
+
     WSRoute --> LangDetect
     APIRoute --> LangDetect
     APIRoute --> TTSEngine
     APIRoute --> STTEngines
-    
-    APIRoute -->|Primary Connection| Postgres
-    APIRoute -.->|Graceful Fallback| SQLite
-```
 
----
+    APIRoute --> Postgres
+    APIRoute -.-> SQLite
+```
 
 ## 🚀 Quick Start Guide
 
 ### Option 1: Run Locally with Python
 
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+**1. Clone the repository**
 
-2. **Start the application**:
-   ```bash
-   python main.py
-   ```
-   Or using Uvicorn directly:
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-   ```
+```bash
+git clone https://github.com/Bharathi0608/speech-transcription-app.git
+cd speech-transcription-app
+```
 
-3. **Open the web application**:
-   Open [http://localhost:8000](http://localhost:8000) in your browser.
+**2. Create and activate a virtual environment**
 
----
+```bash
+python -m venv .venv
+```
+
+Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**3. Install dependencies**
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+**4. Configure environment variables**
+
+Create a `.env` file in the project root if your application requires environment variables.
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@localhost:5433/DATABASE_NAME
+GEMINI_API_KEY=
+GROQ_API_KEY=
+PORT=8000
+HOST=127.0.0.1
+```
+
+Replace the database placeholders with your actual local database configuration. Add API keys only if required by the corresponding features. Never commit real credentials to GitHub.
+
+**5. Start the application**
+
+If your project defines an application entry point in `main.py`, run:
+
+```bash
+python -m uvicorn main:app --reload
+```
+
+Alternatively, if `python main.py` is configured to start the server, use:
+
+```bash
+python main.py
+```
+
+**6. Open the application**
+
+Visit:
+
+http://localhost:8000
 
 ### Option 2: Run with Docker Compose
 
-Run both the PostgreSQL database and application container:
+If the repository includes a correctly configured `compose.yaml` or `docker-compose.yml`, run:
+
 ```bash
 docker compose up --build
 ```
 
----
+Stop the containers with:
+
+```bash
+docker compose down
+```
 
 ## 🧪 Automated Testing
 
-Run the included automated integration test suite:
+If the project includes `tests/test_api.py`, run:
+
+```bash
+python -m pytest tests/
+```
+
+Alternatively, if the file is a standalone test script:
+
 ```bash
 python tests/test_api.py
 ```
 
-This verifies:
-- PostgreSQL database health check
-- Transcription creation with Hinglish language analysis
-- Single read & keyword search filtering
-- Update title and metadata
-- Open-Source TTS speech generation
-- Single and bulk deletion
-- Real-time metrics calculations
-
----
+The actual test coverage depends on the tests implemented in the repository.
 
 ## 📡 REST API Reference
 
+The following table describes the intended API design. Confirm that each endpoint exists in your backend before relying on it.
+
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/transcriptions` | Create and store new transcription with Hinglish analysis |
-| `GET` | `/api/transcriptions` | List transcriptions with pagination, search `q`, filter `lang`, and sort |
-| `GET` | `/api/transcriptions/{id}` | Retrieve single transcription details |
-| `PUT` | `/api/transcriptions/{id}` | Update title, text, tags, notes, or favorite status |
-| `DELETE` | `/api/transcriptions/{id}` | Delete transcription and remove audio clip |
-| `POST` | `/api/transcriptions/bulk-delete` | Batch delete multiple transcriptions |
-| `POST` | `/api/transcribe/upload` | Upload audio file (WAV/MP3/WebM) and transcribe |
-| `POST` | `/api/tts/generate` | Synthesize speech via open-source TTS |
-| `GET` | `/api/tts/{filename}` | Stream synthesized MP3 audio |
-| `GET` | `/api/audio/{filename}` | Stream user-recorded audio file |
-| `GET` | `/api/dashboard/stats` | Aggregate dashboard KPI metrics |
-| `GET` | `/api/transcriptions/export` | Export history in JSON, CSV, TXT, or SRT |
-| `GET` | `/api/health` | Service and active database connection status |
-| `WS` | `/ws/transcribe` | Real-time bidirectional WebSocket stream |
+| `POST` | `/api/transcriptions` | Create a transcription |
+| `GET` | `/api/transcriptions` | List, search, filter, and sort transcriptions |
+| `GET` | `/api/transcriptions/{id}` | Retrieve a transcription |
+| `PUT` | `/api/transcriptions/{id}` | Update transcription details |
+| `DELETE` | `/api/transcriptions/{id}` | Delete a transcription |
+| `POST` | `/api/transcriptions/bulk-delete` | Delete multiple transcriptions |
+| `POST` | `/api/transcribe/upload` | Upload and transcribe an audio file |
+| `POST` | `/api/tts/generate` | Generate speech from text |
+| `GET` | `/api/tts/{filename}` | Retrieve generated speech audio |
+| `GET` | `/api/audio/{filename}` | Retrieve a saved audio file |
+| `GET` | `/api/dashboard/stats` | Retrieve dashboard statistics |
+| `GET` | `/api/transcriptions/export` | Export transcription history |
+| `GET` | `/api/health` | Check application health |
+| `WS` | `/ws/transcribe` | WebSocket transcription connection |
+
+## ⚙️ Environment Variables
+
+Configure only the variables supported by your application.
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Database connection string |
+| `GEMINI_API_KEY` | API key for the configured Gemini integration |
+| `GROQ_API_KEY` | API key for the configured Groq integration |
+| `PORT` | Application port, if supported |
+| `HOST` | Application host, if supported |
+
+**Security note:** Keep `.env`, API keys, passwords, and production database credentials out of version control. Add `.env` to `.gitignore`.
+
+## 🛠️ Technology Stack
+
+- **Backend:** Python, FastAPI
+- **Database:** PostgreSQL, SQLite (if configured)
+- **ORM:** SQLAlchemy
+- **Frontend:** Browser-based web technologies
+- **Real-time communication:** WebSocket and Web Audio API
+- **Speech recognition:** Browser speech recognition and configured external transcription engines
+- **Text-to-speech:** gTTS
+- **Development tools:** Git, GitHub, Python virtual environments
+
+## 📌 Project Goals
+
+- Simplify speech transcription for multilingual users.
+- Support Hindi-English code-switching analysis.
+- Store and manage transcription history.
+- Provide a convenient interface for searching, editing, and exporting transcriptions.
+- Offer a modular architecture for integrating speech recognition and text-to-speech engines.
+
+## 📄 License
+
+Add a license file if you intend to distribute the project as open source.
 
 ---
 
-## ⚙️ Environment Variables (Optional)
-
-Create a `.env` file in the root directory if customizing settings:
-
-```env
-DATABASE_URL=postgresql://ascend:ascend@localhost:5433/ascend_lms
-GEMINI_API_KEY=your_gemini_api_key_here
-GROQ_API_KEY=your_groq_api_key_here
-PORT=8000
-HOST=0.0.0.0
-```
-
-*(Note: The application operates fully out-of-the-box using the native multilingual engine, open-source TTS, and PostgreSQL/SQLite even without cloud API keys).*
+**VocalFlow — Real-Time Multilingual Speech-to-Text & Dashboard**
