@@ -3,6 +3,23 @@
 
 A real-time Speech-to-Text web application specializing in multilingual code-switching (Hinglish: Hindi + English), with PostgreSQL database storage and an interactive CRUD dashboard.
 
+
+
+## 📸 Application Screenshots
+
+### Screenshot 1
+![VocalFlow Screenshot 1](screenshots/1.jpg)
+
+### Screenshot 2
+![VocalFlow Screenshot 2](screenshots/2.jpg)
+
+### Screenshot 3
+![VocalFlow Screenshot 3](screenshots/3.jpg)
+
+### Screenshot 4
+![VocalFlow Screenshot 4](screenshots/4.jpg)
+
+
 ## 🌟 Key Features
 
 ### 1. Real-Time Multilingual Speech-to-Text
