@@ -5,19 +5,21 @@ A real-time Speech-to-Text web application specializing in multilingual code-swi
 
 
 
+
 ## 📸 Application Screenshots
 
 ### Screenshot 1
-![VocalFlow Screenshot 1](screenshots/1.jpg)
+![VocalFlow Screenshot 1](./screenshots/1.jpeg)
 
 ### Screenshot 2
-![VocalFlow Screenshot 2](screenshots/2.jpg)
+![VocalFlow Screenshot 2](./screenshots/2.jpeg)
 
 ### Screenshot 3
-![VocalFlow Screenshot 3](screenshots/3.jpg)
+![VocalFlow Screenshot 3](./screenshots/3.jpeg)
 
 ### Screenshot 4
-![VocalFlow Screenshot 4](screenshots/4.jpg)
+![VocalFlow Screenshot 4](./screenshots/4.jpeg)
+
 
 
 ## 🌟 Key Features
