@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VocalFlow | Real-Time Multilingual Speech-to-Text & Dashboard</title>
+  <meta name="description" content="State-of-the-art multilingual real-time speech-to-text service supporting Hindi, English, and Hinglish code-switching with PostgreSQL relational storage and CRUD operations dashboard." />
+
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <!-- Top Telemetry & Status Bar -->
+  <aside class="top-ticker-bar" id="topTickerBar">
+    <div class="top-ticker-container">
+      <div class="top-ticker-left">
+        <span class="db-dot" style="width: 7px; height: 7px;"></span>
+        <span><strong>Enterprise Speech AI:</strong> Real-time multilingual code-switching (Hindi + English) active</span>
+      </div>
+      <div class="top-ticker-center">
+        <div class="top-ticker-item">
+          <span>Latency:</span>
+          <span style="color: #6ee7b7; font-weight: 600;">&lt; 35ms</span>
+        </div>
+        <div class="top-ticker-item">•</div>
+        <div class="top-ticker-item">
+          <span>Engine:</span>
+          <span style="color: #7dd3fc; font-weight: 600;">WebSpeech &amp; WebSocket 60fps</span>
+        </div>
+        <div class="top-ticker-item">•</div>
+        <div class="top-ticker-item">
+          <span>TTS:</span>
+          <span style="color: #d8b4fe; font-weight: 600;">Open-Source gTTS</span>
+        </div>
+      </div>
+      <div class="top-ticker-right">
+        <a href="/docs" target="_blank" class="top-ticker-link">Interactive Swagger API ↗</a>
+        <a href="/api/health" target="_blank" class="top-ticker-link">System Health Telemetry ↗</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar" id="mainNavbar">
+    <div class="nav-container">
+      <a href="/" class="nav-brand" id="brandLink">
+        <div class="nav-logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+          </svg>
+        </div>
+        <div class="nav-brand-text">
+          <div class="nav-title-row">
+            <span class="nav-title">VocalFlow</span>
+            <span class="nav-version-badge">v1.2</span>
+          </div>
+          <span class="nav-subtitle">Multilingual Hinglish Speech Studio</span>
+        </div>
+      </a>
+
+      <!-- Center Quick Jump Links -->
+      <div class="nav-center-menu" id="navCenterMenu">
+        <button type="button" class="nav-menu-link active" data-navtab="studio-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+          Live Studio
+        </button>
+        <button type="button" class="nav-menu-link" data-navtab="history-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+          Database CRUD
+        </button>
+        <button type="button" class="nav-menu-link" data-navtab="upload-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          File Upload
+        </button>
+        <button type="button" class="nav-menu-link" data-navtab="architecture-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect></svg>
+          Architecture
+        </button>
+      </div>
+
+      <!-- Action items -->
+      <div class="nav-actions">
+        <button type="button" class="nav-quick-record-btn" id="navQuickRecordBtn" title="Focus Studio & Record">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4" fill="currentColor"></circle></svg>
+          Quick Record
+        </button>
+        
+        <a href="/docs" target="_blank" class="nav-doc-btn" id="navDocsBtn" title="Open Swagger OpenAPI Documentation">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          API Docs
+        </a>
+
+        <div class="db-pill" id="dbStatusPill" title="Active Relational Database Connection">
+          <span class="db-dot"></span>
+          <span>Connecting DB...</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <div class="main-wrapper">
+
+    <!-- Tab Navigation -->
+    <header>
+      <div class="tab-navigation" id="tabNavigation">
+        <button class="tab-btn active" id="tabStudioBtn" data-tab="studio-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+          Live Recording Studio
+        </button>
+        <button class="tab-btn" id="tabHistoryBtn" data-tab="history-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+          Transcriptions Dashboard & CRUD
+        </button>
+        <button class="tab-btn" id="tabUploadBtn" data-tab="upload-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Audio File Upload
+        </button>
+        <button class="tab-btn" id="tabArchitectureBtn" data-tab="architecture-tab">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          Architecture & Engines
+        </button>
+      </div>
+    </header>
+
+    <!-- TAB 1: Live Studio -->
+    <main>
+      <section class="tab-pane active" id="studio-tab">
+        <div class="studio-grid">
+          
+          <!-- Left Column: Audio Visualizer & Mic Trigger -->
+          <article class="glass-card">
+            <div class="card-header">
+              <div class="card-title-group">
+                <div class="card-title-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path></svg>
+                </div>
+                <h2 class="card-title">Real-Time Voice Studio</h2>
+              </div>
+              <div class="stream-status-badge idle" id="streamStatusBadge">
+                Stream Idle
+              </div>
+            </div>
+
+            <!-- Controls bar -->
+            <div class="studio-controls-bar">
+              <div class="control-item">
+                <label class="control-label" for="langSelect">Input Language</label>
+                <select id="langSelect" class="select-input">
+                  <option value="hi-IN" selected>Hindi & Hinglish (हिंदी / Multilingual)</option>
+                  <option value="en-IN">Indian English (en-IN)</option>
+                  <option value="en-US">US English (en-US)</option>
+                  <option value="es-ES">Spanish (Español)</option>
+                  <option value="fr-FR">French (Français)</option>
+                </select>
+              </div>
+              <div class="control-item">
+                <label class="control-label" for="engineSelect">Transcription Engine</label>
+                <select id="engineSelect" class="select-input">
+                  <option value="native" selected>Real-time Multilingual Engine (Zero-Latency)</option>
+                  <option value="gemini">Gemini Live 3.1 / Flash STT API</option>
+                  <option value="groq">Groq Whisper Large v3</option>
+                  <option value="local">Open-Source Local Whisper Model</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Audio Visualizer Canvas -->
+            <div class="visualizer-container" id="visualizerContainer">
+              <canvas id="audioCanvas"></canvas>
+              <div class="visualizer-overlay-text" id="visualizerOverlayText">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20M7 8v8M12 4v16M17 8v8"></path></svg>
+                Audio Visualizer Ready - Speak to Activate
+              </div>
+            </div>
+
+            <!-- Microphone Button & Timer -->
+            <div class="record-trigger-area">
+              <div class="mic-btn-wrapper">
+                <div class="mic-pulse-ring" id="micPulseRing"></div>
+                <button class="mic-btn" id="micBtn" title="Click to start real-time transcription">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="22"></line>
+                  </svg>
+                </button>
+              </div>
+              <div class="record-status-group">
+                <div class="record-timer" id="recordTimer">00:00</div>
+                <div class="record-hint" id="recordHint">Click mic to start real-time transcription</div>
+              </div>
+            </div>
+
+            <!-- Sample Hinglish Test Phrases -->
+            <div class="quick-test-section">
+              <div class="quick-test-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                Try Multilingual / Hinglish Sentences (Click to load):
+              </div>
+              <div class="phrase-chips">
+                <div class="phrase-chip" data-phrase="Main kal market ja raha hoon to buy some fresh fruits and vegetables.">
+                  🛒 "Main kal market ja raha hoon to buy some fruits"
+                </div>
+                <div class="phrase-chip" data-phrase="Aaj ka meeting schedule bahut tight hai, let's complete the presentation by evening.">
+                  💼 "Aaj ka meeting schedule bahut tight hai..."
+                </div>
+                <div class="phrase-chip" data-phrase="Yeh speech to text application real time me multilingual sentences transcribe karta hai.">
+                  ⚡ "Yeh speech to text application real time me..."
+                </div>
+                <div class="phrase-chip" data-phrase="हम इस डेटाबेस आर्किटेक्चर में PostgreSQL का उपयोग कर रहे हैं।">
+                  🇮🇳 "हम इस डेटाबेस आर्किटेक्चर में PostgreSQL का..."
+                </div>
+              </div>
+            </div>
+
+          </article>
+
+          <!-- Right Column: Live Incoming Stream & Linguistic Analysis -->
+          <article class="glass-card">
+            <div class="stream-display-area">
+              <div class="stream-meta-header">
+                <div class="card-title-group">
+                  <div class="card-title-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                  </div>
+                  <h2 class="card-title">Live Transcript Stream</h2>
+                </div>
+                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);" id="wordCountBadge">0 words</span>
+              </div>
+
+              <!-- Editable live transcript editor -->
+              <div class="transcript-editor-box" id="streamEditor" contenteditable="true" spellcheck="false" placeholder="Your real-time transcribed words will stream here live as you speak..."></div>
+
+              <!-- Live Multilingual & Hinglish Code-Switching Metrics -->
+              <div class="analysis-strip">
+                <div class="analysis-metrics-row">
+                  <div>
+                    <span style="color: var(--text-muted); font-size: 0.76rem; text-transform: uppercase;">Detected Language:</span>
+                    <span class="lang-badge hinglish" id="langBadge">Multilingual</span>
+                  </div>
+                  <div style="display: flex; gap: 0.85rem; font-size: 0.78rem;">
+                    <span>Hindi / Hinglish: <strong id="hindiPctText" style="color: #6ee7b7;">0%</strong></span>
+                    <span>English: <strong id="englishPctText" style="color: #7dd3fc;">0%</strong></span>
+                  </div>
+                </div>
+                <div class="ratio-bar-container">
+                  <div class="ratio-hindi" id="ratioHindiBar" style="width: 50%;"></div>
+                  <div class="ratio-english" id="ratioEnglishBar" style="width: 50%;"></div>
+                </div>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="action-buttons-group">
+                <button class="btn btn-secondary" id="clearBtn" title="Clear current transcript">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  Clear
+                </button>
+                <button class="btn btn-secondary" id="playTtsBtn" title="Synthesize and play speech back using Open-Source TTS">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                  Play Open-Source TTS
+                </button>
+                <button class="btn btn-primary" id="saveBtn" title="Save this transcription to PostgreSQL database">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                  Save to Database
+                </button>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- TAB 2: History Dashboard & CRUD -->
+      <section class="tab-pane" id="history-tab">
+        
+        <!-- KPI Metrics Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Total Transcriptions</span>
+              <span class="kpi-value" id="kpiTotalTranscriptions">0</span>
+              <span class="kpi-subtext">Stored in PostgreSQL</span>
+            </div>
+            <div class="kpi-icon-box indigo">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Total Words Transcribed</span>
+              <span class="kpi-value" id="kpiTotalWords">0</span>
+              <span class="kpi-subtext">Across all languages</span>
+            </div>
+            <div class="kpi-icon-box cyan">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Hinglish / Multilingual</span>
+              <span class="kpi-value" id="kpiHinglishRatio">0%</span>
+              <span class="kpi-subtext">Code-switched sentences</span>
+            </div>
+            <div class="kpi-icon-box purple">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-info">
+              <span class="kpi-title">Total Audio Processed</span>
+              <span class="kpi-value" id="kpiTotalDuration">0s</span>
+              <span class="kpi-subtext">Voice recording time</span>
+            </div>
+            <div class="kpi-icon-box emerald">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Section Header -->
+        <div class="history-section-header">
+          <div class="history-title-block">
+            <h2>Transcription Database & History</h2>
+            <p>Manage, search, edit, listen to TTS, or export your saved multilingual transcriptions</p>
+          </div>
+        </div>
+
+        <!-- Search, Filter & Bulk Toolbar -->
+        <div class="toolbar-bar">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search transcriptions by title, keywords, or tags..." />
+          </div>
+
+          <div class="filter-group">
+            <select id="langFilter" class="select-input">
+              <option value="all">All Languages</option>
+              <option value="Hinglish">Hinglish (Code-Switching)</option>
+              <option value="Hindi">Hindi (हिंदी)</option>
+              <option value="English">English</option>
+            </select>
+
+            <select id="sortSelect" class="select-input">
+              <option value="newest">Sort: Newest First</option>
+              <option value="oldest">Sort: Oldest First</option>
+              <option value="duration">Sort: Longest Duration</option>
+              <option value="words">Sort: Highest Word Count</option>
+            </select>
+
+            <button class="btn btn-danger" id="bulkDeleteBtn" style="display: none;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              Delete Selected
+            </button>
+
+            <select id="exportFormatSelect" class="select-input">
+              <option value="json">Export as JSON</option>
+              <option value="csv">Export as CSV</option>
+              <option value="txt">Export as Plain Text</option>
+              <option value="srt">Export as Subtitles (SRT)</option>
+            </select>
+            <button class="btn btn-secondary" id="exportBtn" title="Download Transcriptions">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Export
+            </button>
+          </div>
+        </div>
+
+        <!-- Transcriptions History Table -->
+        <div class="transcriptions-table-wrapper">
+          <table class="transcriptions-table" id="transcriptionsTable">
+            <thead>
+              <tr>
+                <th style="width: 38px;">
+                  <input type="checkbox" id="selectAllCheckbox" title="Select All" />
+                </th>
+                <th>Title / Engine</th>
+                <th>Language</th>
+                <th>Transcript Content</th>
+                <th>Metrics</th>
+                <th>Recorded At</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="transcriptionsTableBody">
+              <!-- Dynamically populated via app.js -->
+            </tbody>
+          </table>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar">
+            <span id="pageInfoText">Page 1 of 1</span>
+            <div class="page-btn-group">
+              <button class="page-btn" id="prevPageBtn" disabled>&laquo; Previous</button>
+              <button class="page-btn" id="nextPageBtn" disabled>Next &raquo;</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 3: Audio File Upload -->
+      <section class="tab-pane" id="upload-tab">
+        <div class="glass-card" style="max-width: 760px; margin: 0 auto;">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-title-icon" style="background: rgba(168, 85, 247, 0.15); color: var(--accent-purple);">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              </div>
+              <h2 class="card-title">Upload Audio File for Transcription</h2>
+            </div>
+          </div>
+
+          <form id="uploadForm">
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label class="form-label" for="uploadTitleInput">Custom Title (Optional)</label>
+              <input type="text" id="uploadTitleInput" class="form-input" placeholder="e.g. Hindi English Standup Audio Recording" />
+            </div>
+
+            <div class="dropzone" id="dropzone" style="margin-bottom: 1.5rem;">
+              <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;">Choose audio file or drag & drop here</h3>
+              <p class="dropzone-text" style="font-size: 0.85rem; color: var(--text-muted);">Supports WAV, MP3, WebM, OGG, M4A up to 50MB</p>
+              <input type="file" id="audioFileInput" accept="audio/*" style="display: none;" />
+            </div>
+
+            <div id="uploadStatus" style="display: none; padding: 0.75rem; border-radius: var(--radius-sm); background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); color: #a5b4fc; font-size: 0.85rem; margin-bottom: 1rem; text-align: center;"></div>
+
+            <button type="submit" class="btn btn-primary" id="uploadSubmitBtn" style="width: 100%; padding: 0.75rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              Transcribe & Save to Database
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB 4: Architecture & Engines -->
+      <section class="tab-pane" id="architecture-tab">
+        <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="card-title-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect></svg>
+              </div>
+              <h2 class="card-title">System Architecture & Engineering Details</h2>
+            </div>
+          </div>
+
+          <div style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.8;">
+            <p style="margin-bottom: 1rem;">
+              <strong>VocalFlow</strong> is built for high-performance real-time speech transcription specifically handling 
+              <span style="color: #d8b4fe; font-weight: 600;">multilingual code-switching (Hinglish: Hindi + English)</span>.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0;">
+              <div style="background: rgba(30, 41, 59, 0.5); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--card-border);">
+                <h4 style="color: var(--accent-indigo); margin-bottom: 0.5rem;">🎙️ Real-Time Audio Pipeline</h4>
+                <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: var(--text-muted);">
+                  <li>Web Audio API AnalyserNode 60fps dynamic visualizer</li>
+                  <li>Continuous interim streaming with WebSocket sync</li>
+                  <li>MediaRecorder audio chunking for local voice playback</li>
+                  <li>Zero-latency client-side multilingual recognition</li>
+                </ul>
+              </div>
+
+              <div style="background: rgba(30, 41, 59, 0.5); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--card-border);">
+                <h4 style="color: var(--accent-emerald); margin-bottom: 0.5rem;">🗄️ Database & Storage</h4>
+                <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: var(--text-muted);">
+                  <li>PostgreSQL 17 Relational Database (Dockerized container)</li>
+                  <li>Auto-reconnecting SQLAlchemy ORM connection pool</li>
+                  <li>Seamless fallback to SQLite if PostgreSQL container stops</li>
+                  <li>Full CRUD with indexing, search, filtering, and export</li>
+                </ul>
+              </div>
+
+              <div style="background: rgba(30, 41, 59, 0.5); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--card-border);">
+                <h4 style="color: var(--accent-cyan); margin-bottom: 0.5rem;">🗣️ Multilingual / Hinglish Engine</h4>
+                <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: var(--text-muted);">
+                  <li>Lexical Hindi and English code-switch detection</li>
+                  <li>Devanagari Unicode & Romanized Hinglish vocabulary parsing</li>
+                  <li>Language ratio computation (Hindi % vs English %)</li>
+                  <li>Code-switch transition point counter</li>
+                </ul>
+              </div>
+
+              <div style="background: rgba(30, 41, 59, 0.5); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--card-border);">
+                <h4 style="color: var(--accent-purple); margin-bottom: 0.5rem;">🔊 Open-Source Text-to-Speech</h4>
+                <ul style="padding-left: 1.2rem; font-size: 0.85rem; color: var(--text-muted);">
+                  <li>Self-contained open-source gTTS speech synthesis</li>
+                  <li>MD5 hash based audio caching for zero-latency replay</li>
+                  <li>Automatic Indian English / Hindi accent voice selection</li>
+                  <li>Browser Web Speech Synthesis fallback integration</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Enterprise Footer Section -->
+  <footer class="footer-section" id="mainFooter">
+    <div class="footer-container">
+      <div class="footer-grid">
+        
+        <!-- Column 1: Brand & Overview -->
+        <div class="footer-col">
+          <div class="footer-brand-header">
+            <div class="footer-logo-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="22"></line>
+              </svg>
+            </div>
+            <span class="footer-brand-title">VocalFlow AI</span>
+          </div>
+          <p class="footer-desc">
+            Enterprise-grade real-time speech-to-text service optimized for multilingual code-switching between Hindi, English, and regional Indian languages. Backed by PostgreSQL relational storage and open-source speech synthesis.
+          </p>
+          <div class="footer-badges-row">
+            <span class="tech-tag">#PostgreSQL17</span>
+            <span class="tech-tag">#FastAPI</span>
+            <span class="tech-tag">#HinglishSTT</span>
+            <span class="tech-tag">#gTTS</span>
+            <span class="tech-tag">#WebAudioAPI</span>
+            <span class="tech-tag">#Docker</span>
+          </div>
+        </div>
+
+        <!-- Column 2: Supported AI Engines -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">AI &amp; Speech Engines</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item">
+              <a href="#studio-tab" class="footer-tab-trigger" data-target="studio-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Native Real-Time Multilingual Engine
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="#studio-tab" class="footer-tab-trigger" data-target="studio-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Google Gemini Live 3.1 &amp; Flash STT
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="#studio-tab" class="footer-tab-trigger" data-target="studio-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Groq Whisper Large v3 Engine
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="#studio-tab" class="footer-tab-trigger" data-target="studio-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Open-Source gTTS Speech Synthesizer
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="#upload-tab" class="footer-tab-trigger" data-target="upload-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Local Audio Stream Receiver
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Column 3: Storage & Database -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">Database &amp; Storage</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item">
+              <a href="#history-tab" class="footer-tab-trigger" data-target="history-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                PostgreSQL 17 Relational Storage
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="#history-tab" class="footer-tab-trigger" data-target="history-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Interactive CRUD History Grid
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="#architecture-tab" class="footer-tab-trigger" data-target="architecture-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Dynamic SQLite Resilient Failover
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="/api/transcriptions/export?format=json" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Bulk JSON / CSV / SRT Export
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="#architecture-tab" class="footer-tab-trigger" data-target="architecture-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                ACID Transactions &amp; Pool Manager
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Column 4: Developer APIs & Docs -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">API &amp; Documentation</h4>
+          <ul class="footer-links-list">
+            <li class="footer-link-item">
+              <a href="/docs" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                FastAPI Swagger OpenAPI Docs
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="/redoc" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                ReDoc Specifications
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="/api/health" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                System Health Endpoint
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="/api/dashboard/stats" target="_blank">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                Analytics &amp; Metrics Telemetry
+              </a>
+            </li>
+            <li class="footer-link-item">
+              <a href="#architecture-tab" class="footer-tab-trigger" data-target="architecture-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                System Architecture Deep-Dive
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Sub-Footer Bottom Bar -->
+      <div class="sub-footer">
+        <div class="sub-footer-left">
+          <span>&copy; 2026 VocalFlow AI Systems. All rights reserved.</span>
+          <span>•</span>
+          <div class="sub-footer-status">
+            <span class="db-dot" style="width: 6px; height: 6px;"></span>
+            <span>All Systems Operational</span>
+          </div>
+        </div>
+
+        <div class="sub-footer-right">
+          <span style="color: var(--text-muted); font-size: 0.74rem;">Powered by FastAPI &amp; PostgreSQL 17</span>
+          <button type="button" class="back-to-top-btn" id="backToTopBtn" title="Scroll back to top">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            Back to Top
+          </button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Edit Transcription Modal -->
+  <div class="modal-backdrop" id="editModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Transcription</h3>
+        <button class="modal-close-btn" id="editModalClose" title="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <form id="editForm">
+        <div class="modal-body">
+          <input type="hidden" id="editId" />
+
+          <div class="form-group">
+            <label class="form-label" for="editTitle">Title</label>
+            <input type="text" id="editTitle" class="form-input" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="editContent">Transcription Text</label>
+            <textarea id="editContent" class="form-textarea" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="editTags">Tags (comma-separated)</label>
+            <input type="text" id="editTags" class="form-input" placeholder="e.g. meeting, hinglish, work" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="editNotes">Notes / Annotations</label>
+            <input type="text" id="editNotes" class="form-input" placeholder="Optional notes" />
+          </div>
+
+          <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.6rem;">
+            <input type="checkbox" id="editFavorite" />
+            <label class="form-label" for="editFavorite" style="margin: 0; cursor: pointer;">Mark as Favorite</label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="editModalCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Frontend Scripts -->
+  <script src="/static/js/audio-visualizer.js"></script>
+  <script src="/static/js/speech-engine.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
